@@ -23,11 +23,11 @@ func (u *users) Set(value string) error {
 
 func main() {
 	var users users
-	flag.Var(&users, "u", "Set notified user ID")
-	msg := flag.String("m", "", "Set a notification message")
+	flag.Var(&users, "u", "Set a notified user ID")
+	fpath := flag.String("f", "", "Set a comment file")
 	flag.Parse()
-	if msg == nil || len(*msg) == 0 {
-		log.Fatalln("Must set a notification message")
+	if fpath == nil || len(*fpath) == 0 {
+		log.Fatalln("Must set a comment file")
 	}
 	domain := os.Getenv("BACKLOG_DOMAIN")
 	spaceID := os.Getenv("BACKLOG_SPACE_ID")
@@ -41,7 +41,12 @@ func main() {
 		apiKey,
 	)
 	data := url.Values{}
-	data.Set("content", *msg)
+	comment, err := loadComment(*fpath)
+	log.Println(comment)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	data.Set("content", comment)
 	for _, user := range users {
 		data.Add("notifiedUserId[]", user)
 	}
@@ -58,4 +63,12 @@ func main() {
 		log.Fatalln(err)
 	}
 	fmt.Print(string(body))
+}
+
+func loadComment(fpath string) (string, error) {
+	bytes, err := ioutil.ReadFile(fpath)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
