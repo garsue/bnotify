@@ -98,6 +98,10 @@ func makeCommentText(msg, fpath *string) (string, error) {
 
 func debug(format string, v ...interface{}) {
 	if verbose != nil && *verbose {
-		log.Printf(format, v)
+		if len(v) > 0 {
+			log.Printf(format, v)
+		} else {
+			log.Println(format)
+		}
 	}
 }
