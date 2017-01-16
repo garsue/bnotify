@@ -82,7 +82,14 @@ func makeCommentText(msg, fpath *string) (string, error) {
 	if fpath == nil {
 		return comment, nil
 	}
-	bytes, err := ioutil.ReadFile(*fpath)
+	fp := *fpath
+	if len(fp) == 0 {
+		return comment, nil
+	}
+	if _, err := os.Stat(fp); os.IsNotExist(err) {
+		return comment, nil
+	}
+	bytes, err := ioutil.ReadFile(fp)
 	if err != nil {
 		return "", err
 	}
