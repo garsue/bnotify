@@ -93,7 +93,7 @@ func makeCommentText(msg, fpath *string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return comment + "\n" + string(bytes), nil
+	return comment + "\n\n" + string(bytes), nil
 }
 
 func debug(format string, v ...interface{}) {
