@@ -4,6 +4,6 @@ MAINTAINER labs.garsue@gmail.com
 
 ENV BACKLOG_DOMAIN backlog.jp
 
-RUN go get github.com/garsue/bnotify
+RUN go get github.com/garsue/bnotify/cmd/bnotify
 
 ENTRYPOINT ["bnotify"]
