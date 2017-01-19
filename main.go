@@ -28,9 +28,10 @@ func (u *users) Set(value string) error {
 func main() {
 	// Load command line options
 	var users users
-	flag.Var(&users, "u", "Set a notified user ID")
-	msg := flag.String("m", "", "Set a message")
-	fpath := flag.String("f", "", "Set a comment file")
+	flag.Var(&users, "u", "Specifies a notified user ID")
+	msg := flag.String("m", "", "Sets a message string")
+	msgURL := flag.String("r", "", "Specifies a URL to load a remote message")
+	fpath := flag.String("f", "", "Specifies a message file")
 	verbose = flag.Bool("v", false, "Verbose mode")
 	flag.Parse()
 
@@ -49,7 +50,7 @@ func main() {
 		apiKey,
 	)
 	data := url.Values{}
-	comment, err := makeCommentText(msg, fpath)
+	comment, err := makeCommentText(msg, msgURL, fpath)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -74,26 +75,69 @@ func main() {
 	debug(string(body))
 }
 
-func makeCommentText(msg, fpath *string) (string, error) {
+func makeCommentText(msg, msgURL, fpath *string) (string, error) {
 	var comment string
 	if msg != nil {
 		comment = *msg
 	}
+	fromFile, err := loadFromFile(fpath)
+	if err != nil {
+		return "", err
+	}
+	if len(comment) > 0 {
+		comment += "\n\n"
+	}
+	comment += fromFile
+	fromURL, err := loadFromURL(msgURL)
+	if err != nil {
+		return "", err
+	}
+	if len(comment) > 0 {
+		comment += "\n\n"
+	}
+	comment += fromURL
+	return comment, nil
+}
+
+func loadFromFile(fpath *string) (string, error) {
 	if fpath == nil {
-		return comment, nil
+		return "", nil
 	}
 	fp := *fpath
 	if len(fp) == 0 {
-		return comment, nil
-	}
-	if _, err := os.Stat(fp); os.IsNotExist(err) {
-		return comment, nil
+		return "", nil
 	}
 	bytes, err := ioutil.ReadFile(fp)
 	if err != nil {
 		return "", err
 	}
-	return comment + "\n\n" + string(bytes), nil
+	return string(bytes), nil
+}
+
+func loadFromURL(msgURL *string) (string, error) {
+	if msgURL == nil {
+		return "", nil
+	}
+	urlStr := *msgURL
+	if len(urlStr) == 0 {
+		return "", nil
+	}
+	resp, err := http.Get(urlStr)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
 func debug(format string, v ...interface{}) {
