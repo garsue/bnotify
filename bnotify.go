@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+const (
+	max_comment_length = 64 * 1024
+)
+
 // Comment has comment data
 type Comment struct {
 	message           string
@@ -46,7 +50,7 @@ func (c Comment) String() string {
 		}
 		msg += c.messageFromFile
 		if c.quote {
-			msg += "```"
+			msg += "\n```"
 		}
 	}
 	if len(c.messageFromRemote) > 0 {
@@ -58,7 +62,7 @@ func (c Comment) String() string {
 		}
 		msg += c.messageFromRemote
 		if c.quote {
-			msg += "```"
+			msg += "\n```"
 		}
 	}
 	return msg
@@ -72,7 +76,7 @@ func (c *Comment) loadFromFile() error {
 	if err != nil {
 		return err
 	}
-	c.messageFromFile = string(bytes)
+	c.messageFromFile = limit(string(bytes))
 	return nil
 }
 
@@ -95,6 +99,14 @@ func (c *Comment) loadFromURL() error {
 	if err != nil {
 		return err
 	}
-	c.messageFromRemote = string(bytes)
+	c.messageFromRemote = limit(string(bytes))
 	return nil
+}
+
+func limit(s string) string {
+	size := len(s)
+	if size > max_comment_length {
+		return s[size-max_comment_length : size]
+	}
+	return s
 }
